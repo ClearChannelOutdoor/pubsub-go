@@ -30,13 +30,15 @@ type Config struct {
 	ReceiveSettings        ReceiveSettings
 }
 
-// PublishSettings holds options for configuring publishing to PubSub.
+// PublishSettings is an extension of Google PubSub's PublishSettings that
+// enables further configuration for publishing messages to a topic.
 type PublishSettings struct {
 	Settings pubsub.PublishSettings
 	// TODO: Add more config like auto creating a topic if it doesn't exist
 }
 
-// ReceiveSettings holds options for configuring receiving from PubSub.
+// ReceiveSettings is an extension of Google PubSub's ReceiveSettings that
+// enables further configuration for receiving messages from a subscription.
 type ReceiveSettings struct {
 	Settings pubsub.ReceiveSettings
 }
