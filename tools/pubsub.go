@@ -62,6 +62,4 @@ func receive(ps *pubsub_go.PubSub, wg *sync.WaitGroup) {
 	if err := ps.Receive(subscription, messages); err != nil {
 		panic(err)
 	}
-
-	fmt.Println("Received message")
 }
