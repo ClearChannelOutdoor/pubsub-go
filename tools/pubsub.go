@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	projectID    = "develop-applications-75118"
+	projectID    = "projectID"
 	settingsFile = "./pubsub-dev.json"
 	subscription = "pubsub-go-module-test-sub"
 	topic        = "pubsub-go-module-test"
