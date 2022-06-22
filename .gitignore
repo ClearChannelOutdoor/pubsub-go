@@ -20,3 +20,6 @@
 
 # Mac OS
 .DS_Store
+
+# Local PubSub Config
+pubsub-dev.json
