@@ -2,9 +2,9 @@
 package pubsub_go
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
-	"encoding/json"
+
+	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
 )
 
@@ -64,18 +64,13 @@ func (ps *PubSub) Publish(m Message) error {
 	topic := ps.client.Topic(m.Topic)
 	topic.PublishSettings = ps.settings.publish.Settings
 
-	data, err := json.Marshal(m.Message)
-	if err != nil {
-		return err
-	}
-
 	ctx := context.Background()
 	result := topic.Publish(ctx, &pubsub.Message{
-		Data:       data,
+		Data:       []byte(m.Message.(string)),
 		Attributes: m.Attributes,
 	})
 
-	_, err = result.Get(ctx)
+	_, err := result.Get(ctx)
 	if err != nil {
 		return err
 	}
