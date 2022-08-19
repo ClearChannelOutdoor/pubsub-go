@@ -2,9 +2,12 @@
 package pubsub_go
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
 	"encoding/json"
+	"fmt"
+	"time"
+
+	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
 )
 
@@ -16,18 +19,23 @@ type PubSub struct {
 }
 
 type settings struct {
-	publish PublishSettings
-	receive ReceiveSettings
+	publish      PublishSettings
+	receive      ReceiveSettings
+	subscription SubscriptionSettings
+	topic        TopicSettings
 }
 
 // Config provides the information needed to securely connect to Google Cloud's PubSub
 // and to configure any publishing and subscription options.
 type Config struct {
-	ProjectID              string
-	IsLocal                bool
-	ServiceAccountFilePath string
-	PublishSettings        PublishSettings
-	ReceiveSettings        ReceiveSettings
+	IsLocal                         bool
+	ProjectID                       string
+	PublishSettings                 PublishSettings
+	ReceiveSettings                 ReceiveSettings
+	ServiceAccountFilePath          string
+	SubscriptionEnableOrdering      bool
+	SubscriptionRetainAckedMessages bool
+	TopicRetentionDays              int
 }
 
 // PublishSettings is an extension of Google PubSub's PublishSettings that
@@ -43,6 +51,19 @@ type ReceiveSettings struct {
 	Settings pubsub.ReceiveSettings
 }
 
+// SubscriptionSettings is an extension of Google PubSub's SubscriptionConfig that
+// enables further configuration for a subscription of a topic
+type SubscriptionSettings struct {
+	EnableMessageOrdering bool
+	RetainAckedMessages   bool
+}
+
+// TopicSettings is an extension of Google PubSub's TopicConfig that
+// enables further configuration for a topic
+type TopicSettings struct {
+	RetentionDurationInDays int
+}
+
 // NewPubSub creates a new PubSub client with the provided Config.
 func NewPubSub(c Config) (*PubSub, error) {
 	client, err := newClient(c.ProjectID, c.IsLocal, c.ServiceAccountFilePath)
@@ -50,13 +71,94 @@ func NewPubSub(c Config) (*PubSub, error) {
 		return nil, err
 	}
 
+	ts := TopicSettings{
+		RetentionDurationInDays: c.TopicRetentionDays,
+	}
+	ss := SubscriptionSettings{
+		EnableMessageOrdering: c.SubscriptionEnableOrdering,
+		RetainAckedMessages:   c.SubscriptionRetainAckedMessages,
+	}
+
 	return &PubSub{
 		client: client,
 		settings: settings{
-			publish: c.PublishSettings,
-			receive: c.ReceiveSettings,
+			publish:      c.PublishSettings,
+			receive:      c.ReceiveSettings,
+			topic:        ts,
+			subscription: ss,
 		},
 	}, nil
+}
+
+// Create Subscriptions for a Topic based on a map of Subscription Name and Filter
+func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string) error {
+	ctx := context.Background()
+
+	// find the topic by tid first
+	topic := ps.client.Topic(tid)
+	exists, err := topic.Exists(ctx)
+	if err != nil {
+		return err
+	}
+	// if the topic does not exist, return an error
+	if !exists {
+		return fmt.Errorf("topic %s does not exist", tid)
+	}
+	// let's create subscriptions with optional filters for the topic
+	for sid, flt := range sids {
+		// check if the subscription exists or not
+		s := ps.client.Subscription(sid)
+		exists, err := s.Exists(ctx)
+		if err != nil {
+			return err
+		}
+		// if the sub already exists, skip it
+		if exists {
+			continue
+		}
+		// let's create a subscription. first, gather the configurations
+		cfg := pubsub.SubscriptionConfig{
+			EnableMessageOrdering: ps.settings.subscription.EnableMessageOrdering,
+			RetainAckedMessages:   ps.settings.subscription.RetainAckedMessages,
+			Topic:                 topic,
+		}
+		// only if the filter is provided in the map[string]string to include the Filter config
+		if flt != "" {
+			cfg.Filter = flt
+		}
+		// creating a subscription
+		_, err = ps.client.CreateSubscription(ctx, sid, cfg)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Create a Topic in Google PubSub if not exist
+func (ps *PubSub) CreateTopic(tid string) error {
+	ctx := context.Background()
+
+	topic := ps.client.Topic(tid)
+	exists, err := topic.Exists(ctx)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	rdd := ps.settings.topic.RetentionDurationInDays
+	if rdd > 7 {
+		rdd = 7 // max to 7 days
+	}
+	cfg := pubsub.TopicConfig{
+		RetentionDuration: time.Duration(rdd) * 24 * time.Hour,
+	}
+	_, err = ps.client.CreateTopicWithConfig(ctx, tid, &cfg)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Publish sends a message to a topic along with any attributes that were provided.
@@ -97,7 +199,9 @@ func (ps *PubSub) Receive(subscription string, messages chan<- *pubsub.Message) 
 func newClient(projectID string, isLocal bool, settingsPath string) (*pubsub.Client, error) {
 	ctx := context.Background()
 
-	if isLocal {
+	// if isLocal is true or is settingsPath is empty, then use credentials
+	useCreds := isLocal || settingsPath != ""
+	if useCreds {
 		return pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(settingsPath))
 	}
 
