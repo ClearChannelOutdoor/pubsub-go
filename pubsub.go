@@ -71,27 +71,17 @@ func NewPubSub(c Config) (*PubSub, error) {
 		return nil, err
 	}
 
-	ts := TopicSettings{
-		RetentionDurationInDays: c.TopicRetentionDays,
-	}
-	ss := SubscriptionSettings{
-		EnableMessageOrdering: c.SubscriptionEnableOrdering,
-		RetainAckedMessages:   c.SubscriptionRetainAckedMessages,
-	}
-
 	return &PubSub{
 		client: client,
 		settings: settings{
-			publish:      c.PublishSettings,
-			receive:      c.ReceiveSettings,
-			topic:        ts,
-			subscription: ss,
+			publish: c.PublishSettings,
+			receive: c.ReceiveSettings,
 		},
 	}, nil
 }
 
 // Create Subscriptions for a Topic based on a map of Subscription Name and Filter
-func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string) error {
+func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, ss SubscriptionSettings) error {
 	ctx := context.Background()
 
 	// find the topic by tid first
@@ -118,8 +108,8 @@ func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string) error 
 		}
 		// let's create a subscription. first, gather the configurations
 		cfg := pubsub.SubscriptionConfig{
-			EnableMessageOrdering: ps.settings.subscription.EnableMessageOrdering,
-			RetainAckedMessages:   ps.settings.subscription.RetainAckedMessages,
+			EnableMessageOrdering: ss.EnableMessageOrdering,
+			RetainAckedMessages:   ss.RetainAckedMessages,
 			Topic:                 topic,
 		}
 		// only if the filter is provided in the map[string]string to include the Filter config
@@ -136,7 +126,7 @@ func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string) error 
 }
 
 // Create a Topic in Google PubSub if not exist
-func (ps *PubSub) CreateTopic(tid string) error {
+func (ps *PubSub) CreateTopic(tid string, ts TopicSettings) error {
 	ctx := context.Background()
 
 	topic := ps.client.Topic(tid)
@@ -147,7 +137,7 @@ func (ps *PubSub) CreateTopic(tid string) error {
 	if exists {
 		return nil
 	}
-	rdd := ps.settings.topic.RetentionDurationInDays
+	rdd := ts.RetentionDurationInDays
 	if rdd > 7 {
 		rdd = 7 // max to 7 days
 	}

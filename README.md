@@ -29,7 +29,11 @@ func main() {
 func main() {
     // Initialize new pubsub-go PubSub
 
-    if err := ps.CreateTopic("topic"); err != nil {
+    // define a configs for topic creation
+    cfg := pubsub_go.TopicSettings{
+		RetentionDurationInDays: 3,
+	}
+    if err := ps.CreateTopic("topic", cfg); err != nil {
         // Handle error
     }
     
@@ -50,8 +54,12 @@ func main() {
     }
     
     tid := "topic"
+    cfg := pubsub_go.SubscriptionSettings{
+		EnableMessageOrdering: true,
+		RetainAckedMessages:   false,
+	}
     // create subscriptions
-    if err := ps.CreateSubscriptions(tid, subs); err != nil {
+    if err := ps.CreateSubscriptions(tid, subs, cfg); err != nil {
         // handle error
     }
     
