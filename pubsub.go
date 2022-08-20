@@ -19,23 +19,18 @@ type PubSub struct {
 }
 
 type settings struct {
-	publish      PublishSettings
-	receive      ReceiveSettings
-	subscription SubscriptionSettings
-	topic        TopicSettings
+	publish PublishSettings
+	receive ReceiveSettings
 }
 
 // Config provides the information needed to securely connect to Google Cloud's PubSub
 // and to configure any publishing and subscription options.
 type Config struct {
-	IsLocal                         bool
-	ProjectID                       string
-	PublishSettings                 PublishSettings
-	ReceiveSettings                 ReceiveSettings
-	ServiceAccountFilePath          string
-	SubscriptionEnableOrdering      bool
-	SubscriptionRetainAckedMessages bool
-	TopicRetentionDays              int
+	IsLocal                bool
+	ProjectID              string
+	PublishSettings        PublishSettings
+	ReceiveSettings        ReceiveSettings
+	ServiceAccountFilePath string
 }
 
 // PublishSettings is an extension of Google PubSub's PublishSettings that
