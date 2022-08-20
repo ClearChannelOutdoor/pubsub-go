@@ -12,9 +12,6 @@ func main() {
         ProjectID:                      "projectID",
         IsLocal:                        true,
         ServiceAccountFilePath:         "./path/to/settings.json",
-        SubscriptionEnableOrdering:     true,
-        SubscriptionRetainAckedMessages: false,
-        TopicRetentionDays:             3,
     }
     
     ps, err := pubsub_go.NewClient(ctx, config)	
