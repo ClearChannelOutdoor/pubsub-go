@@ -9,9 +9,9 @@ import pubsub_go "github.com/clearchanneloutdoor/pubsub-go"
 func main() {
     ctx := context.Background()
     config := pubsub_go.Config{
-        ProjectID:                      "projectID",
-        IsLocal:                        true,
-        ServiceAccountFilePath:         "./path/to/settings.json",
+        ProjectID:              "projectID",
+        IsLocal:                true,
+        ServiceAccountFilePath: "./path/to/settings.json",
     }
     
     ps, err := pubsub_go.NewClient(ctx, config)	
