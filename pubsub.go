@@ -2,9 +2,11 @@
 package pubsub_go
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
 	"encoding/json"
+	"fmt"
+
+	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
 )
 
@@ -23,11 +25,11 @@ type settings struct {
 // Config provides the information needed to securely connect to Google Cloud's PubSub
 // and to configure any publishing and subscription options.
 type Config struct {
-	ProjectID              string
 	IsLocal                bool
-	ServiceAccountFilePath string
+	ProjectID              string
 	PublishSettings        PublishSettings
 	ReceiveSettings        ReceiveSettings
+	ServiceAccountFilePath string
 }
 
 // PublishSettings is an extension of Google PubSub's PublishSettings that
@@ -41,6 +43,18 @@ type PublishSettings struct {
 // enables further configuration for receiving messages from a subscription.
 type ReceiveSettings struct {
 	Settings pubsub.ReceiveSettings
+}
+
+// SubscriptionConfig is an extension of Google PubSub's SubscriptionConfig that
+// enables further configuration for a subscription of a topic
+type SubscriptionConfig struct {
+	Settings pubsub.SubscriptionConfig
+}
+
+// TopicConfig is an extension of Google PubSub's TopicConfig that
+// enables further configuration for a topic
+type TopicConfig struct {
+	Settings pubsub.TopicConfig
 }
 
 // NewPubSub creates a new PubSub client with the provided Config.
@@ -57,6 +71,66 @@ func NewPubSub(c Config) (*PubSub, error) {
 			receive: c.ReceiveSettings,
 		},
 	}, nil
+}
+
+// Create Subscriptions for a Topic based on a map of Subscription Name and Filter
+func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, cfg *SubscriptionConfig) error {
+	ctx := context.Background()
+
+	// find the topic by tid first
+	topic := ps.client.Topic(tid)
+	exists, err := topic.Exists(ctx)
+	if err != nil {
+		return err
+	}
+	// if the topic does not exist, return an error
+	if !exists {
+		return fmt.Errorf("topic %s does not exist", tid)
+	}
+
+	cfg.Settings.Topic = topic
+	// let's create subscriptions with optional filters for the topic
+	for sid, flt := range sids {
+		// check if the subscription exists or not
+		sub := ps.client.Subscription(sid)
+		exists, err := sub.Exists(ctx)
+		if err != nil {
+			return err
+		}
+		// if the sub already exists, skip it
+		if exists {
+			continue
+		}
+		// only if the filter is provided in the map[string]string to include the Filter config
+		if flt != "" {
+			cfg.Settings.Filter = flt
+		}
+		// creating a subscription
+		_, err = ps.client.CreateSubscription(ctx, sid, cfg.Settings)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Create a Topic in Google PubSub if not exist
+func (ps *PubSub) CreateTopic(tid string, cfg *TopicConfig) error {
+	ctx := context.Background()
+
+	topic := ps.client.Topic(tid)
+	exists, err := topic.Exists(ctx)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	_, err = ps.client.CreateTopicWithConfig(ctx, tid, &cfg.Settings)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Publish sends a message to a topic along with any attributes that were provided.
@@ -97,7 +171,9 @@ func (ps *PubSub) Receive(subscription string, messages chan<- *pubsub.Message) 
 func newClient(projectID string, isLocal bool, settingsPath string) (*pubsub.Client, error) {
 	ctx := context.Background()
 
-	if isLocal {
+	// if isLocal is true or is settingsPath is empty, then use credentials
+	useCreds := isLocal || settingsPath != ""
+	if useCreds {
 		return pubsub.NewClient(ctx, projectID, option.WithCredentialsFile(settingsPath))
 	}
 

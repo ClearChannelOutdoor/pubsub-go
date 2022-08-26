@@ -21,6 +21,56 @@ func main() {
 }
 ```
 
+### Create a Topic
+```go
+import "cloud.google.com/go/pubsub"
+
+func main() {
+    // Initialize new pubsub-go PubSub
+
+    // define a configs for topic creation
+    cfg := pubsub_go.TopicConfig{
+		Settings: pubsub.TopicConfig{
+			RetentionDuration: time.Hour * 24 * time.Duration(3),
+		},
+	}
+    if err := ps.CreateTopic("topic", cfg); err != nil {
+        // Handle error
+    }
+    
+    // send a message to the topic}
+```
+
+### Create Multiple Subscriptions with Filters for a Topic
+```go
+import "cloud.google.com/go/pubsub"
+
+func main() {
+    // Initialize new pubsub-go PubSub
+
+    // Specify the name of the topic for those subscriptions we are about to create
+    tid := "topic"
+    // Define a map for a list of Subscription Names and their (optional) filter definitions
+    subs := map[string]string{
+        "topic-sub": "",
+        "topic-sub-ca": "attributes.region = \"CA\"",
+        "topic-sub-nv": "attributes.region = \"NV\"",
+        "topic-sub-tx": "attributes.region = \"TX\"",
+    }
+    cfg := pubsub_go.SubscriptionConfig{
+		Settings: pubsub.SubscriptionConfig{
+			EnableMessageOrdering: true,
+			RetainAckedMessages:   false,
+		},
+	}
+    // Create subscriptions
+    if err := ps.CreateSubscriptions(tid, subs, cfg); err != nil {
+        // handle error
+    }
+    
+}
+```
+
 ### Publish Message
 ```go
 func main() {
