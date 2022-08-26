@@ -46,16 +46,16 @@ type ReceiveSettings struct {
 	Settings pubsub.ReceiveSettings
 }
 
-// SubscriptionSettings is an extension of Google PubSub's SubscriptionConfig that
+// SubscriptionConfigs is an extension of Google PubSub's SubscriptionConfig that
 // enables further configuration for a subscription of a topic
-type SubscriptionSettings struct {
+type SubscriptionConfigs struct {
 	EnableMessageOrdering bool
 	RetainAckedMessages   bool
 }
 
-// TopicSettings is an extension of Google PubSub's TopicConfig that
+// TopicConfigs is an extension of Google PubSub's TopicConfig that
 // enables further configuration for a topic
-type TopicSettings struct {
+type TopicConfigs struct {
 	RetentionDurationInDays int
 }
 
@@ -76,7 +76,7 @@ func NewPubSub(c Config) (*PubSub, error) {
 }
 
 // Create Subscriptions for a Topic based on a map of Subscription Name and Filter
-func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, ss SubscriptionSettings) error {
+func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, scfg SubscriptionConfigs) error {
 	ctx := context.Background()
 
 	// find the topic by tid first
@@ -103,8 +103,8 @@ func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, ss Sub
 		}
 		// let's create a subscription. first, gather the configurations
 		cfg := pubsub.SubscriptionConfig{
-			EnableMessageOrdering: ss.EnableMessageOrdering,
-			RetainAckedMessages:   ss.RetainAckedMessages,
+			EnableMessageOrdering: scfg.EnableMessageOrdering,
+			RetainAckedMessages:   scfg.RetainAckedMessages,
 			Topic:                 topic,
 		}
 		// only if the filter is provided in the map[string]string to include the Filter config
@@ -121,7 +121,7 @@ func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, ss Sub
 }
 
 // Create a Topic in Google PubSub if not exist
-func (ps *PubSub) CreateTopic(tid string, ts TopicSettings) error {
+func (ps *PubSub) CreateTopic(tid string, tc TopicConfigs) error {
 	ctx := context.Background()
 
 	topic := ps.client.Topic(tid)
@@ -132,7 +132,7 @@ func (ps *PubSub) CreateTopic(tid string, ts TopicSettings) error {
 	if exists {
 		return nil
 	}
-	rdd := ts.RetentionDurationInDays
+	rdd := tc.RetentionDurationInDays
 	if rdd > 7 {
 		rdd = 7 // max to 7 days
 	}
