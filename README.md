@@ -27,7 +27,7 @@ func main() {
     // Initialize new pubsub-go PubSub
 
     // define a configs for topic creation
-    cfg := pubsub_go.TopicSettings{
+    cfg := pubsub_go.TopicConfigs{
 		RetentionDurationInDays: 3,
 	}
     if err := ps.CreateTopic("topic", cfg); err != nil {
@@ -51,7 +51,7 @@ func main() {
     }
     
     tid := "topic"
-    cfg := pubsub_go.SubscriptionSettings{
+    cfg := pubsub_go.SubscriptionConfigs{
 		EnableMessageOrdering: true,
 		RetainAckedMessages:   false,
 	}
