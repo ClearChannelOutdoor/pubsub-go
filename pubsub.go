@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
@@ -46,17 +45,16 @@ type ReceiveSettings struct {
 	Settings pubsub.ReceiveSettings
 }
 
-// SubscriptionConfigs is an extension of Google PubSub's SubscriptionConfig that
+// SubscriptionConfig is an extension of Google PubSub's SubscriptionConfig that
 // enables further configuration for a subscription of a topic
-type SubscriptionConfigs struct {
-	EnableMessageOrdering bool
-	RetainAckedMessages   bool
+type SubscriptionConfig struct {
+	Settings pubsub.SubscriptionConfig
 }
 
-// TopicConfigs is an extension of Google PubSub's TopicConfig that
+// TopicConfig is an extension of Google PubSub's TopicConfig that
 // enables further configuration for a topic
-type TopicConfigs struct {
-	RetentionDurationInDays int
+type TopicConfig struct {
+	Settings pubsub.TopicConfig
 }
 
 // NewPubSub creates a new PubSub client with the provided Config.
@@ -76,7 +74,7 @@ func NewPubSub(c Config) (*PubSub, error) {
 }
 
 // Create Subscriptions for a Topic based on a map of Subscription Name and Filter
-func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, scfg SubscriptionConfigs) error {
+func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, cfg *SubscriptionConfig) error {
 	ctx := context.Background()
 
 	// find the topic by tid first
@@ -89,11 +87,13 @@ func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, scfg S
 	if !exists {
 		return fmt.Errorf("topic %s does not exist", tid)
 	}
+
+	cfg.Settings.Topic = topic
 	// let's create subscriptions with optional filters for the topic
 	for sid, flt := range sids {
 		// check if the subscription exists or not
-		s := ps.client.Subscription(sid)
-		exists, err := s.Exists(ctx)
+		sub := ps.client.Subscription(sid)
+		exists, err := sub.Exists(ctx)
 		if err != nil {
 			return err
 		}
@@ -101,18 +101,12 @@ func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, scfg S
 		if exists {
 			continue
 		}
-		// let's create a subscription. first, gather the configurations
-		cfg := pubsub.SubscriptionConfig{
-			EnableMessageOrdering: scfg.EnableMessageOrdering,
-			RetainAckedMessages:   scfg.RetainAckedMessages,
-			Topic:                 topic,
-		}
 		// only if the filter is provided in the map[string]string to include the Filter config
 		if flt != "" {
-			cfg.Filter = flt
+			cfg.Settings.Filter = flt
 		}
 		// creating a subscription
-		_, err = ps.client.CreateSubscription(ctx, sid, cfg)
+		_, err = ps.client.CreateSubscription(ctx, sid, cfg.Settings)
 		if err != nil {
 			return err
 		}
@@ -121,7 +115,7 @@ func (ps *PubSub) CreateSubscriptions(tid string, sids map[string]string, scfg S
 }
 
 // Create a Topic in Google PubSub if not exist
-func (ps *PubSub) CreateTopic(tid string, tc TopicConfigs) error {
+func (ps *PubSub) CreateTopic(tid string, cfg *TopicConfig) error {
 	ctx := context.Background()
 
 	topic := ps.client.Topic(tid)
@@ -132,14 +126,7 @@ func (ps *PubSub) CreateTopic(tid string, tc TopicConfigs) error {
 	if exists {
 		return nil
 	}
-	rdd := tc.RetentionDurationInDays
-	if rdd > 7 {
-		rdd = 7 // max to 7 days
-	}
-	cfg := pubsub.TopicConfig{
-		RetentionDuration: time.Duration(rdd) * 24 * time.Hour,
-	}
-	_, err = ps.client.CreateTopicWithConfig(ctx, tid, &cfg)
+	_, err = ps.client.CreateTopicWithConfig(ctx, tid, &cfg.Settings)
 	if err != nil {
 		return err
 	}
