@@ -11,8 +11,8 @@ done
 
 while true; do
 	read -p "Enter docker image version, or type browse to see a list of available versions:" version
-	if [[ $version -ne "browse" ]]; then break; fi
-	if [[ $version -eq "browse" ]]; then
+	if [[ "$version" != "browse" ]]; then break; fi
+	if [[ "$version" == "browse" ]]; then
 		if which xdg-open >/dev/null; then
 			xdg-open "$kGCP_REGISTRY_URL"
 		elif which open >/dev/null; then
@@ -28,13 +28,11 @@ read -p "Enter topic name:" topic_name
 read -p "Enter subscription name:" subscription_name
 
 port_array=(${ports//:/ })
-echo ${port_array[0]}
-echo ${port_array[1]}
 
-#docker run --rm -ti -p $ports \
-#    gcr.io/google.com/cloudsdktool/cloud-sdk:$version-emulators \
-#    gcloud beta emulators pubsub start \
-#      --project=abc \
-#      --host-port=0.0.0.0:8085
+docker run --rm -ti -p $ports \
+    gcr.io/google.com/cloudsdktool/cloud-sdk:$version-emulators \
+    gcloud beta emulators pubsub start \
+      --project=abc \
+      --host-port=0.0.0.0:$port_array[1]
 
 echo "end"
