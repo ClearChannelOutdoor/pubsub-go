@@ -61,16 +61,20 @@ docker run -d --rm -ti -p $ports \
 echo -e "\nWaiting ${RED}$kWAIT_TIME${NC} seconds for container to start"
 sleep $kWAIT_TIME
 
-echo "\nCreating Topic"
-curl -X PUT -v "http://localhost:$localhost_port/v1/projects/$project_name/topics/$topic_name"
+echo -e "\n${CYAN}Creating Topic${NC}"
+curl -X PUT "http://localhost:$localhost_port/v1/projects/$project_name/topics/$topic_name"
+echo -e "${GREEN}Completed Topic Creation${NC}"
 
-echo "\nCreating Subscription"
-curl -X PUT -H "Content-Type:application/json" -v \
+echo -e "\n${CYAN}Creating Subscription${NC}"
+curl -X PUT -H "Content-Type:application/json" \
 	--data "{\"topic\":\"projects/$project_name/topics/$topic_name\"}"\
 	"http://localhost:$localhost_port/v1/projects/$project_name/subscriptions/$subscription_name"
 
-echo -e "${GREEN}Complete${NC}"
+echo -e "${GREEN}Completd Subscription Creation${NC}"
 
-echo -e "\nPlease run ${GREEN}export PUBSUB_EMULATOR_HOST=\"localhost:$localhost_port\"${NC} in any open terminal windows"
+echo -e "\nPlease run ${GREEN}export PUBSUB_EMULATOR_HOST=\"localhost:$localhost_port\"${NC} in any open terminal windows\n"
+
+echo -e "\n To publish a message to your local pubsub, run the following command:"
+echo -e "curl ${CYAN}-H \"Content-type:application/json\"${NC} -X POST ${CYAN}--data @/request/body.json${NC} ${GREEN}\"http://localhost:${localhost_port}/v1/projects/$project_name/topics/$topic_name:publish\"${NC}\n\n"
 
 exit
