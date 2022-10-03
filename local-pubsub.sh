@@ -22,7 +22,28 @@ WHITE="\033[1;37m"
 kPORT_REGEX="[0-9]:[0-9]"
 kGCP_REGISTRY_URL="https://console.cloud.google.com/gcr/images/google.com:cloudsdktool/GLOBAL/cloud-sdk?gcrImageListsize=30"
 kWAIT_TIME=20
+kADD_MESSAGE_URL="/v1/projects/\$PROJECT_ID/topics/\$TOPIC_ID:publish"
 
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-m|--generate-message)
+			echo -e "${BROWN}NOTE:${NC} this option can only generate json to create one message at a time."
+			read -p "$(echo -e "Enter ${CYAN}message data${NC} or ${CYAN}file path${NC}: ")" message_data
+			if [[ -f "$message_data" ]]; then
+				encoded_string=$(openssl base64 -in $message_data | tr -d '\n')
+			else
+				encoded_string=$(echo $message_data | openssl base64)
+			fi
+			echo -e "{\n\t${LIGHT_GREEN}\"messages\"${NC}:[\n\t\t{\n\t\t\t${LIGHT_GREEN}\"data\"${NC}:\"$encoded_string\"\n\t\t}\n\t]\n}\n"
+			echo -e "To publish message, ${RED}POST${NC} this response body to ${LIGHT_BLUE}$PUBSUB_EMULATOR_HOST$kADD_MESSAGE_URL${NC}"
+			exit
+			;;
+		*)
+			break
+			;;
+	esac
+
+done
 
 while true; do
 	read -p "Enter docker port mapping: " ports
