@@ -23,3 +23,6 @@
 
 # Local PubSub Config
 pubsub-dev.json
+
+# *.swp files or the vim users in the house
+*.swp
