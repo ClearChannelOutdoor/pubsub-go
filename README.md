@@ -127,7 +127,7 @@ locally. This repo includes a script that will spin up a docker
 container with the emulator started so running a local dev
 environment is easier.
 
-Huge shout out to @anguillanneuf, who wrote a [blog post](https://medium.com/google-cloud/things-i-wish-i-knew-about-pub-sub-part-3-b8947b49224b)
+Huge shout out to [@anguillanneuf](https://github.com/anguillanneuf), who wrote a [blog post](https://medium.com/google-cloud/things-i-wish-i-knew-about-pub-sub-part-3-b8947b49224b)
 that made building this script much easier.
 
 ### Dependencies
