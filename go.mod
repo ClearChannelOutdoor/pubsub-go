@@ -3,12 +3,12 @@ module github.com/clearchanneloutdoor/pubsub-go
 go 1.17
 
 require (
-	cloud.google.com/go v0.110.0
 	cloud.google.com/go/pubsub v1.30.0
 	google.golang.org/api v0.118.0
 )
 
 require (
+	cloud.google.com/go v0.110.0 // indirect
 	cloud.google.com/go/compute v1.19.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.0.0 // indirect
