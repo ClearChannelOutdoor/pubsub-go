@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
@@ -143,6 +144,10 @@ func (ps *PubSub) Publish(m Message) error {
 		return err
 	}
 
+	if m.Attributes != nil {
+		m.Attributes["OriginatedAt"] = fmt.Sprintf("%v", time.Now().Unix())
+	}
+
 	ctx := context.Background()
 	result := topic.Publish(ctx, &pubsub.Message{
 		Data:       data,
@@ -162,6 +167,41 @@ func (ps *PubSub) Publish(m Message) error {
 func (ps *PubSub) Receive(subscription string, messages chan<- *pubsub.Message) error {
 	ctx := context.Background()
 	s := ps.client.Subscription(subscription)
+	s.ReceiveSettings = pubsub.DefaultReceiveSettings
+
+	return s.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
+		messages <- m
+	})
+}
+
+func (ps *PubSub) ReceiveWithSettings(subscription string, rs ReceiveSettings, messages chan<- *pubsub.Message) error {
+	ctx := context.Background()
+	s := ps.client.Subscription(subscription)
+
+	s.ReceiveSettings = pubsub.DefaultReceiveSettings
+
+	// override the default settings with the provided settings
+	if rs.Settings.MaxExtension != 0 {
+		s.ReceiveSettings.MaxExtension = rs.Settings.MaxExtension
+	}
+	if rs.Settings.MaxExtensionPeriod != 0 {
+		s.ReceiveSettings.MaxExtensionPeriod = rs.Settings.MaxExtensionPeriod
+	}
+	if rs.Settings.MinExtensionPeriod != 0 {
+		s.ReceiveSettings.MinExtensionPeriod = rs.Settings.MinExtensionPeriod
+	}
+	if rs.Settings.MaxOutstandingMessages != 0 {
+		s.ReceiveSettings.MaxOutstandingMessages = rs.Settings.MaxOutstandingMessages
+	}
+	if rs.Settings.MaxOutstandingBytes != 0 {
+		s.ReceiveSettings.MaxOutstandingBytes = rs.Settings.MaxOutstandingBytes
+	}
+	if rs.Settings.NumGoroutines != 0 {
+		s.ReceiveSettings.NumGoroutines = rs.Settings.NumGoroutines
+	}
+
+	// always false to allow the library to use streamingpull-api
+	s.ReceiveSettings.Synchronous = false
 
 	return s.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
 		messages <- m
