@@ -166,46 +166,40 @@ func (ps *PubSub) Publish(m Message) error {
 // through the channel.
 func (ps *PubSub) Receive(subscription string, messages chan<- *pubsub.Message) error {
 	ctx := context.Background()
-	s := ps.client.Subscription(subscription)
-	s.ReceiveSettings = pubsub.DefaultReceiveSettings
+	sub := ps.client.Subscription(subscription)
+	sub.ReceiveSettings = mergeReceiveSettings(ps.settings.receive)
 
-	return s.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
+	return sub.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
 		messages <- m
 	})
 }
 
-func (ps *PubSub) ReceiveWithSettings(subscription string, rs ReceiveSettings, messages chan<- *pubsub.Message) error {
-	ctx := context.Background()
-	s := ps.client.Subscription(subscription)
+func mergeReceiveSettings(rs ReceiveSettings) pubsub.ReceiveSettings {
+	s := pubsub.DefaultReceiveSettings
 
-	s.ReceiveSettings = pubsub.DefaultReceiveSettings
-
-	// override the default settings with the provided settings
 	if rs.Settings.MaxExtension != 0 {
-		s.ReceiveSettings.MaxExtension = rs.Settings.MaxExtension
+		s.MaxExtension = rs.Settings.MaxExtension
 	}
 	if rs.Settings.MaxExtensionPeriod != 0 {
-		s.ReceiveSettings.MaxExtensionPeriod = rs.Settings.MaxExtensionPeriod
+		s.MaxExtensionPeriod = rs.Settings.MaxExtensionPeriod
 	}
 	if rs.Settings.MinExtensionPeriod != 0 {
-		s.ReceiveSettings.MinExtensionPeriod = rs.Settings.MinExtensionPeriod
+		s.MinExtensionPeriod = rs.Settings.MinExtensionPeriod
 	}
 	if rs.Settings.MaxOutstandingMessages != 0 {
-		s.ReceiveSettings.MaxOutstandingMessages = rs.Settings.MaxOutstandingMessages
+		s.MaxOutstandingMessages = rs.Settings.MaxOutstandingMessages
 	}
 	if rs.Settings.MaxOutstandingBytes != 0 {
-		s.ReceiveSettings.MaxOutstandingBytes = rs.Settings.MaxOutstandingBytes
+		s.MaxOutstandingBytes = rs.Settings.MaxOutstandingBytes
 	}
 	if rs.Settings.NumGoroutines != 0 {
-		s.ReceiveSettings.NumGoroutines = rs.Settings.NumGoroutines
+		s.NumGoroutines = rs.Settings.NumGoroutines
 	}
 
 	// always false to allow the library to use streamingpull-api
-	s.ReceiveSettings.Synchronous = false
+	s.Synchronous = false
 
-	return s.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
-		messages <- m
-	})
+	return s
 }
 
 func newClient(projectID string, isLocal bool, settingsPath string) (*pubsub.Client, error) {
