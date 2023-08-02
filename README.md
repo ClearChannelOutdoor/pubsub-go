@@ -119,16 +119,29 @@ func main() {
     }
 }
 ```
-### Receive Messages with ReceiveSettings
+### Receive Messages with Additional ReceiveSettings
 
 ```go
 import (
-	"cloud.google.com/go/pubsub"
+	pubsub_go "github.com/clearchanneloutdoor/pubsub-go"
 )
 
 func main() {
     // Initialize new pubsub-go PubSub
+   config := pubsub_go.Config{
+		ProjectID: YOUR_GCP_PROJECT_ID,
+		ReceiveSettings: pubsub_go.ReceiveSettings{
+            // providing additional receive settings for your consumer app
+			Settings: pubsub.ReceiveSettings{
+				MaxExtension:           (15 * time.Second),
+				MaxOutstandingMessages: 3000,
+				NumGoroutines:          75,
+			},
+		},
+	}
 
+	ps, _ := pubsub_go.NewPubSub(config)
+    
     messages := make(chan *pubsub.Message)
 
     go func() {
@@ -143,15 +156,7 @@ func main() {
         }
     }()
 
-    rs := ps.ReceiveSettings{
-		Settings: pubsub.ReceiveSettings{
-			MaxExtension: (15 * time.Second),
-			MaxOutstandingMessages: 1000,
-			NumGoroutines:          10,
-		},
-	}
-
-    if err := ps.ReceiveWithSettings("subscription", rs, messages); err != nil {
+    if err := ps.Receive("subscription", messages); err != nil {
         // Handle error
     }
 }
