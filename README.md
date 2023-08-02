@@ -94,7 +94,7 @@ func main() {
 }
 ```
 
-### Receive Message
+### Receive Messages
 
 ```go
 func main() {
@@ -115,6 +115,43 @@ func main() {
     }()
 
     if err := ps.Receive("subscription", messages); err != nil {
+        // Handle error
+    }
+}
+```
+### Receive Messages with ReceiveSettings
+
+```go
+import (
+	"cloud.google.com/go/pubsub"
+)
+
+func main() {
+    // Initialize new pubsub-go PubSub
+
+    messages := make(chan *pubsub.Message)
+
+    go func() {
+        for {
+            msg := <-messages
+
+            // Process message
+            fmt.Printf("Got message: %s\n", string(msg.Data))
+
+            // Acknowledge message
+            msg.Ack()
+        }
+    }()
+
+    rs := ps.ReceiveSettings{
+		Settings: pubsub.ReceiveSettings{
+			MaxExtension: (15 * time.Second),
+			MaxOutstandingMessages: 1000,
+			NumGoroutines:          10,
+		},
+	}
+
+    if err := ps.ReceiveWithSettings("subscription", rs, messages); err != nil {
         // Handle error
     }
 }
