@@ -9,7 +9,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added v2.0.0
 
 - Created `pkg` directory for organizing the codebase
-- Added `pg` package name for simple use in consuming code
 - Added `CreateSubscription` method to allow creation of a single subscription
 - Added `Close` method to allow consumers of the library to close the PubSub client
 
