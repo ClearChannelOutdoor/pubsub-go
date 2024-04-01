@@ -110,8 +110,11 @@ func main() {
 
 ### Publish Message
 
+The Publish function can be used to publish a string or an object (which is serialized as JSON).
+
 ```go
 type Example struct {
+  CoolNumber int `json:"coolNumber"`
   Message string `json:"message"`
 }
 
@@ -124,8 +127,36 @@ func main() {
   }
 
   // Publish an object as JSON
-  e := Example{Message: "hello world"}
+  e := Example{
+    CoolNumber: 13,
+    Message: "hello world",
+  }
   if err := client.Publish("<topic ID>", e); err != nil {
+    panic(err)
+  }
+}
+```
+
+#### Publish Messages in Other Formats
+
+Publish can also be used to send messages serialized in other formats as well, if you serialize the payload prior to calling the function and pass in the serialized `[]byte` slice:
+
+```go
+type Example struct {
+  Message string `yaml:"message"`
+}
+
+func main() {
+  // Initialize new PubSub client
+
+  // Serialize as yaml
+  sy, err := yaml.Marshal(Example{Message: "hello world"})
+  if err != nil {
+    panic(err)
+  }
+
+  // Publish serialized yaml
+  if err := client.Publish("<topic ID>", sy); err != nil {
     panic(err)
   }
 }

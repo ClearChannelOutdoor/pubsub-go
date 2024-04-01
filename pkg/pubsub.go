@@ -9,8 +9,17 @@ import (
 	"cloud.google.com/go/pubsub"
 )
 
+type gcpPubSubProvider interface {
+	Close() error
+	CreateSubscription(context.Context, string, pubsub.SubscriptionConfig) (*pubsub.Subscription, error)
+	CreateTopic(context.Context, string) (*pubsub.Topic, error)
+	CreateTopicWithConfig(context.Context, string, *pubsub.TopicConfig) (*pubsub.Topic, error)
+	Subscription(string) *pubsub.Subscription
+	Topic(string) *pubsub.Topic
+}
+
 type PubSub struct {
-	clnt *pubsub.Client
+	clnt gcpPubSubProvider
 	ctx  context.Context
 	opts *PubSubOptions
 }
@@ -33,9 +42,11 @@ func (p *PubSub) Close() error {
 
 func (p *PubSub) CreateSubscription(id string, sid string, fltr string, cfg ...pubsub.SubscriptionConfig) error {
 	// ensure the topic exists
-	if err := p.CreateTopic(id); err != nil {
-		return err
-	}
+	/*
+		if err := p.CreateTopic(id); err != nil {
+			return err
+		}
+	//*/
 
 	// ensure we have a subscription config
 	ss := pubsub.SubscriptionConfig{}
@@ -137,7 +148,7 @@ func (p *PubSub) Publish(id string, d any, attrs ...map[string]string) error {
 	}
 
 	// apply OriginatedAt attribute
-	mgd := merge(attrs...)
+	mgd := mergeMaps(attrs...)
 
 	// set OriginatedAt attribute if not set and AutoOriginatedAt is true
 	if _, ok := mgd["OriginatedAt"]; p.opts.AutoOriginatedAt && !ok {

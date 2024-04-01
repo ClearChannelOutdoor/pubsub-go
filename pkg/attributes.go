@@ -1,6 +1,6 @@
 package pb
 
-func merge(attrs ...map[string]string) map[string]string {
+func mergeMaps(attrs ...map[string]string) map[string]string {
 	// merge attributes
 	mgd := make(map[string]string)
 
