@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	projectID    = "pubsub-go-module-test-project"
-	subscription = "pubsub-go-module-test-sub"
-	topic        = "pubsub-go-module-test-topic"
+	projectID    = "example-project"
+	subscription = "example-sub"
+	topic        = "example-topic"
 )
 
 func main() {
@@ -26,6 +26,11 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	// create a topic
+	if err := client.CreateTopic(topic); err != nil {
+		panic(err)
+	}
 
 	// create a subscription to the topic
 	if err := client.CreateSubscription(topic, subscription, ""); err != nil {

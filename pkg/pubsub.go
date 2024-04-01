@@ -41,13 +41,6 @@ func (p *PubSub) Close() error {
 }
 
 func (p *PubSub) CreateSubscription(id string, sid string, fltr string, cfg ...pubsub.SubscriptionConfig) error {
-	// ensure the topic exists
-	/*
-		if err := p.CreateTopic(id); err != nil {
-			return err
-		}
-	//*/
-
 	// ensure we have a subscription config
 	ss := pubsub.SubscriptionConfig{}
 	if len(cfg) > 0 {

@@ -234,16 +234,41 @@ if err := ps.Receive("<subscription ID>", messages); err != nil {
 
 ## Running GCP PubSub Locally
 
+### GCP SDK
+
+If you have installed the GCP SDK, you can run the following command to start the emulator.
+
+```bash
+gcloud beta emulators pubsub start --project=example-project --host-port=localhost:8085 
+```
+
+Then, export the following environment variables to point to the emulator.
+
+```bash
+export PUBSUB_EMULATOR_HOST=localhost:8085
+export PUBSUB_PROJECT_ID=example-project
+```
+
+#### Run the Example
+
+After starting the emulator, in the same terminal window where you have exported the environment variables, run the following command to start the example.
+
+```bash
+go run examples/pubsub.go
+```
+
+### Docker
+
 Google publishes an emulator for GCP PubSub, so you can run it locally. This repo includes a script that will spin up a docker container with the emulator started so running a local dev environment is easier.
 
 Huge shout out to [@anguillanneuf](https://github.com/anguillanneuf), who wrote a [blog post](https://medium.com/google-cloud/things-i-wish-i-knew-about-pub-sub-part-3-b8947b49224b) that made building this script much easier.
 
-### Dependencies
+#### Dependencies
 
 - Docker
 - Openssl
 
-### Start
+#### Start
 
 Open a terminal and navigate to this project's directory. once there
 run the following command...
@@ -257,7 +282,7 @@ This will take you through a wizard to get all information necessary to start a 
 
 There is an `export` command that is out put once the script has completed that you'll need to copy and paste across all your open terminal windows. The reason being is that there is no way to set the GCP PubSub endpoint directly in your application; the GCP libray looks to an environment to know which endpoint to use.
 
-### The -m Option
+#### The -m Option
 
 Sending a message directly to your queue using something like `curl` isn't clearly documented. Rather than sending a json payload, you send a base64 encoded string of the message data.
 
