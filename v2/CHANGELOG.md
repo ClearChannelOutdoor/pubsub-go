@@ -4,6 +4,12 @@ All notable changes in pubsub-go will be reflected in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v2.0.1 - 2024-04-15
+
+### Changed v2.0.1
+
+- Updated documentation for more clarity
+
 ## v2.0.0 - 2024-03-28
 
 ### Added v2.0.0
